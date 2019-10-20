@@ -84,4 +84,21 @@ public class TestHelper {
         return result;
     }
 
+    public static void printStringArray(String[] array) {
+        PrintStream s = System.out;
+
+        s.println("String[] array = {");
+
+        for (int i = 0; i < array.length; i++) {
+            s.print("    \"");
+            s.print(array[i]);
+            if (i + 1 < array.length)
+                s.println("\",");
+            else
+                s.println("\"");
+        }
+
+        s.println("};");
+    }
+
 }

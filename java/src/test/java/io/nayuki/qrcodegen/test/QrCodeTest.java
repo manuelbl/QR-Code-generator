@@ -75,34 +75,34 @@ class QrCodeTest {
 
     private static final String[] MODULES_1 = {
         "XXXXXXX X X XXX     X XXXXXXX",
-        "X     X X   X XXX  XX X     X",
-        "X XXX X XXXX  X   X X X XXX X",
+        "X     X   X XXXX    X X     X",
+        "X XXX X XXX      XX   X XXX X",
         "X XXX X X  XX XX  XX  X XXX X",
-        "X XXX X X      XXX X  X XXX X",
-        "X     X  X X X    XX  X     X",
+        "X XXX X   X  X X X    X XXX X",
+        "X     X XX   XX  XXXX X     X",
         "XXXXXXX X X X X X X X XXXXXXX",
-        "        X   XX XX  X         ",
-        " XX X XX   XXX X    X X XXXXX",
+        "        X X X  X             ",
+        " X X XXXX   XXXX X   XXX XX X",
         " XXX   XXXXXXXXX X XXXX   XXX",
-        " XXXX XXXX    XXXXXXXXXXXX XX",
-        "XXX     XXX X XX X  X      X ",
+        "  XX  X XXX  XXX XX XX XX  X ",
+        "XX   X   XXXX  X       X  XX ",
         "X   X XX X XXXX XX XXXXX X XX",
-        "   XX  XX X XX   X   XX  XXXX",
-        "X   X X X XX    X X  X XX XXX",
+        " X X    X   X   XX X X    XX ",
+        "X X XXX   X   X XXX XX  X  XX",
         "X X    XX XXX X XXX    X   XX",
-        "X   XXXXX XX  X X XXXXXX   XX",
-        "   XXX  XXX X  XX XX  X  XX  ",
+        "XX   XX X  X XX   X XX X X X ",
+        "  XXX    XXXX XXXXXXX XX X   ",
         "X   XXX     X XXXX        XXX",
-        " XXX X X XX X   XXX    XXX   ",
-        "X XX XX X XXX  XXX  XXXXX    ",
+        "  XXXX   X  XX   XXX  XXX   X",
+        "X  X  X   X X XXX   XXXXX X  ",
         "        XX X XX   XXX   X  XX",
-        "XXXXXXX X X     XX XX X XXXXX",
-        "X     X  X X XX X   X   XX X ",
-        "X XXX X X XXXXXX    XXXXX   X",
-        "X XXX X  X X   X X  X   XX   ",
-        "X XXX X X X   X  X  X  XX X X",
+        "XXXXXXX X    X   X  X X X XX ",
+        "X     X XX   X  XX  X   XXXX ",
+        "X XXX X   XXXXXX    XXXXX   X",
+        "X XXX X XXXX X XXX XX X X   X",
+        "X XXX X   XX            X   X",
         "X     X X  X XXX XX XX X   X ",
-        "XXXXXXX  XX   X XX XX X X  XX"
+        "XXXXXXX  X   XX  X  X   XX X "
     };
 
     private static final String TEXT_1 = "The quick brown fox jumps";
@@ -112,7 +112,8 @@ class QrCodeTest {
         QrCode qrCode = QrCode.encodeText(TEXT_1, Ecc.QUARTILE);
         assertSame(Ecc.QUARTILE, qrCode.errorCorrectionLevel);
         assertEquals(29, qrCode.size);
-        assertEquals(0, qrCode.mask);
+        assertEquals(7, qrCode.mask);
+        //TestHelper.printStringArray(TestHelper.toStringArray(qrCode));
         assertArrayEquals(MODULES_1, TestHelper.toStringArray(qrCode));
     }
 
@@ -393,39 +394,39 @@ class QrCodeTest {
     }
 
     private static final String[] MODULES_7 = {
-        "XXXXXXX XXXX X  X    X X  XXXXXXX",
-        "X     X  X    XXX XXXX    X     X",
-        "X XXX X  X  XX XX  XXXXX  X XXX X",
-        "X XXX X  X X      X  X  X X XXX X",
-        "X XXX X X   XX XX   XXX   X XXX X",
-        "X     X XX  XX     X X XX X     X",
+        "XXXXXXX  X    X  X XXXX   XXXXXXX",
+        "X     X X    X  X X       X     X",
+        "X XXX X  XX X  X    XX X  X XXX X",
+        "X XXX X X XX  XXX X X X X X XXX X",
+        "X XXX X X  XXXXXXX   XXX  X XXX X",
+        "X     X   XXXX XXX X  X X X     X",
         "XXXXXXX X X X X X X X X X XXXXXXX",
-        "         X  XXX XX XX XX         ",
-        " XXXXXXX X     X  XX  XX   XX   X",
-        "  XXXX   X X   XXXXXX  X   XX X  ",
-        "X  XX X  XX  X X X X  X     XXX X",
-        "X XX X X  XXXX XXXXXX   X XX     ",
-        "   XXXX XX X  XX    XXX XXX XXXXX",
-        "XXX X   X  X XX XXX  X  X  XX X  ",
-        "XX XXXXX X  X XXX X X   X  XXXX X",
-        "XX  X  XXXXX X  X X   X  X  X XXX",
-        "      X         X X XX  X XXX    ",
-        "XX  XX  X XXX XX X   X XX X X XXX",
-        " XX XXX   X  XX XX X X X XX XX  X",
-        "X  X   X     X  XXX  XX X XX X XX",
-        " X XX X X X XX   X X X    XX   XX",
-        "XX X   XX  XXXXXX   XXXXXXX X X X",
-        "X X  XXXXXX  X XXX X X XX X   XXX",
-        "X XXXX XX XXX  XXX XX  X XXX X XX",
-        "X    XXX   XXXX X XXXX XXXXXX X  ",
-        "        XXX  X   XXX    X   X X X",
-        "XXXXXXX XXX X X    X  X X X XX XX",
-        "X     X X X X XX X  X   X   X    ",
-        "X XXX X XX   X  X X XXXXXXXXX XXX",
-        "X XXX X XX  X XXXXX  X X XX  X  X",
-        "X XXX X X XX X X    XX  X XXX    ",
-        "X     X X X   X  XX   X X  XX    ",
-        "XXXXXXX  XX XXX   X   XX XXX X X "
+        "        X   X  XXX   XXX         ",
+        " X XXXX XXX  X XX X    X XX XX X ",
+        "     X  X XX  X  XXX XXX  X   X X",
+        "X XXXXX XXXX XXX   XX XX  X X X  ",
+        "X X X  X X  XX    XXXXXXX X XX   ",
+        " XXX  XX XX  X XXX X X XX     X  ",
+        "X  XX  X X X   XXXXXX   XXX X XXX",
+        "X  X XX  XX XXXX  XXX X XX X XXXX",
+        "XXXX   X   X XXX  X XX   XXX  XX ",
+        "  X  XX X  X  X XXX  X XX  XXX  X",
+        "XX X    XX  X X X     X X XX XXXX",
+        "      XXX  X        XXX        X ",
+        "XXX     XX    XXXXXXX X XX   X   ",
+        "   X  XXX   X   XX   XX  XXXX   X",
+        "XXX X  X XXXXX         XXX X  X  ",
+        "X     XX XXX XXXX  XXX  X    XXX ",
+        "X X    XXX  X      XXXX  XX X  XX",
+        "XXX X X X X X    XX  XX XXXXXXXXX",
+        "        X X   XX XX XX  X   X XX ",
+        "XXXXXXX  X  XXX X       X X XX  X",
+        "X     X XX  X   XX   XX X   X   X",
+        "X XXX X XX X XX XXX  XX XXXXXXXX ",
+        "X XXX X X XXX X   X   X  XXXX   X",
+        "X XXX X       XXXX X XXXXX X X XX",
+        "X     X XXX  X X XXXXXX XXX X  XX",
+        "XXXXXXX  X  X X X XX   X  XXXX   "
     };
 
     private static final String TEXT_7 = "こんにちwa、世界！ αβγδ";
@@ -435,7 +436,8 @@ class QrCodeTest {
         QrCode qrCode = QrCode.encodeText(TEXT_7, Ecc.QUARTILE);
         assertSame(Ecc.QUARTILE, qrCode.errorCorrectionLevel);
         assertEquals(33, qrCode.size);
-        assertEquals(2, qrCode.mask);
+        assertEquals(6, qrCode.mask);
+        //TestHelper.printStringArray(TestHelper.toStringArray(qrCode));
         assertArrayEquals(MODULES_7, TestHelper.toStringArray(qrCode));
     }
 
@@ -575,35 +577,35 @@ class QrCodeTest {
     }
 
     private static final String[] MODULES_9 = {
-        "XXXXXXX   XXXXXX XXX  XXXXXXX",
-        "X     X XXXX X XXXXX  X     X",
-        "X XXX X X  X X X X    X XXX X",
-        "X XXX X X XXX X XX XX X XXX X",
-        "X XXX X XX  X   XXX   X XXX X",
-        "X     X X X XXX X   X X     X",
+        "XXXXXXX  X  XXX X XX  XXXXXXX",
+        "X     X XXXXX XXXX  X X     X",
+        "X XXX X    XX XX XXXX X XXX X",
+        "X XXX X  X  X XX   XX X XXX X",
+        "X XXX X   XXX  X  X   X XXX X",
+        "X     X X X     X XX  X     X",
         "XXXXXXX X X X X X X X XXXXXXX",
-        "         X XX X   XXX        ",
-        "  X  XXXXX XX XXXXXXXX XXXXX ",
-        " X XX   XX X XXX XX   X    XX",
-        "  X XXX XX X XX X XX X  X X X",
-        " X XX   XXX  X  X  XX X XX   ",
-        " X   XX X X X XXXXX  XX    X ",
-        "X  XXX XXX     X X XX X  X  X",
-        "XXXXX X X XX   X  XX     XX X",
-        "XX XXX X X X X XXX XX X  X  X",
-        " XX X X X XX  X X  XX XX     ",
-        "    XX X X X XX  X X  XX  X X",
-        "XX  XXX X   X X   XX      X X",
-        "  X     XXX  XXX   XXXX XX  X",
-        "XXXX  XX X  X    X  XXXXX   X",
-        "        X  XXX X  XXX   XX  X",
-        "XXXXXXX XXX   X  XX X X XXX X",
-        "X     X X    X X X XX   XX  X",
-        "X XXX X   XX      XXXXXXX    ",
-        "X XXX X  X    X  X XX  XXX X ",
-        "X XXX X XX X XX XX   X  X XXX",
-        "X     X  XX     X X X X  X   ",
-        "XXXXXXX   XXXXXXX   X XXXX  X"
+        "        X X X XXXXXXX        ",
+        "    XXXX  X X X   XXX XX   X ",
+        "X XXX  X X XX  X X XX X XXXXX",
+        "XX  XXXX X XX   X   XX   X  X",
+        " X   X  X  X X X X XXX XXX XX",
+        " X XX X XX XX X   X    X    X",
+        " XXXXX   X  XXXX XX   X X X X",
+        "   XX XX  XXXXXX    X   X   X",
+        "XX     X  X  X     XXX X X X ",
+        " XXX XX XX    XX X XXX     XX",
+        "XXX XX  XX XX    XX X XXXX  X",
+        "  X XXXX     X      X   XX  X",
+        "  XXXX  X  X XX XX XX  XXX X ",
+        "XXX XXXX  XXX  XX   XXXXX  X ",
+        "        X  X  XX    X   X X X",
+        "XXXXXXX XXX XX   X XX X X   X",
+        "X     X XXXX X  X  XX   XX X ",
+        "X XXX X XX     XXXXXXXXXX  XX",
+        "X XXX X  X  XX   XX    X  XX ",
+        "X XXX X  X XX   XXXXXX   X XX",
+        "X     X    X   X XX XX X X XX",
+        "XXXXXXX  X  XXX  X  XX  XX X "
     };
 
     private static final String TEXT_9 = "https://www.nayuki.io/";
@@ -614,7 +616,8 @@ class QrCodeTest {
         QrCode qrCode = QrCode.encodeSegments(segments, Ecc.HIGH, 1, 40, -1, true);
         assertSame(Ecc.HIGH, qrCode.errorCorrectionLevel);
         assertEquals(29, qrCode.size);
-        assertEquals(1, qrCode.mask);
+        assertEquals(4, qrCode.mask);
+        //TestHelper.printStringArray(TestHelper.toStringArray(qrCode));
         assertArrayEquals(MODULES_9, TestHelper.toStringArray(qrCode));
     }
 
