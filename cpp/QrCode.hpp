@@ -23,8 +23,8 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
-#include <deque>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -147,7 +147,7 @@ class QrCode final {
 	 * This is a low-level API that most users should not use directly.
 	 * A mid-level API is the encodeSegments() function.
 	 */
-	public: QrCode(int ver, Ecc ecl, const std::vector<std::uint8_t> &dataCodewords, int mask);
+	public: QrCode(int ver, Ecc ecl, const std::vector<std::uint8_t> &dataCodewords, int msk);
 	
 	
 	
@@ -201,7 +201,7 @@ class QrCode final {
 	
 	// Draws two copies of the format bits (with its own error correction code)
 	// based on the given mask and this object's error correction level field.
-	private: void drawFormatBits(int mask);
+	private: void drawFormatBits(int msk);
 	
 	
 	// Draws two copies of the version bits (with its own error correction code),
@@ -245,7 +245,7 @@ class QrCode final {
 	// before masking. Due to the arithmetic of XOR, calling applyMask() with
 	// the same mask value a second time will undo the mask. A final well-formed
 	// QR Code needs exactly one (not zero, two, etc.) mask applied.
-	private: void applyMask(int mask);
+	private: void applyMask(int msk);
 	
 	
 	// Calculates and returns the penalty score based on state of this QR Code's current modules.
@@ -274,15 +274,31 @@ class QrCode final {
 	private: static int getNumDataCodewords(int ver, Ecc ecl);
 	
 	
-	// Inserts the given value to the front of the given array, which shifts over the
-	// existing values and deletes the last value. A helper function for getPenaltyScore().
-	private: static void addRunToHistory(int run, std::deque<int> &history);
+	// Returns a Reed-Solomon ECC generator polynomial for the given degree. This could be
+	// implemented as a lookup table over all possible parameter values, instead of as an algorithm.
+	private: static std::vector<std::uint8_t> reedSolomonComputeDivisor(int degree);
 	
 	
-	// Tests whether the given run history has the pattern of ratio 1:1:3:1:1 in the middle, and
-	// surrounded by at least 4 on either or both ends. A helper function for getPenaltyScore().
-	// Must only be called immediately after a run of white modules has ended.
-	private: static bool hasFinderLikePattern(const std::deque<int> &runHistory);
+	// Returns the Reed-Solomon error correction codeword for the given data and divisor polynomials.
+	private: static std::vector<std::uint8_t> reedSolomonComputeRemainder(const std::vector<std::uint8_t> &data, const std::vector<std::uint8_t> &divisor);
+	
+	
+	// Returns the product of the two given field elements modulo GF(2^8/0x11D).
+	// All inputs are valid. This could be implemented as a 256*256 lookup table.
+	private: static std::uint8_t reedSolomonMultiply(std::uint8_t x, std::uint8_t y);
+	
+	
+	// Can only be called immediately after a white run is added, and
+	// returns either 0, 1, or 2. A helper function for getPenaltyScore().
+	private: int finderPenaltyCountPatterns(const std::array<int,7> &runHistory) const;
+	
+	
+	// Must be called at the end of a line (row or column) of modules. A helper function for getPenaltyScore().
+	private: int finderPenaltyTerminateAndCount(bool currentRunColor, int currentRunLength, std::array<int,7> &runHistory) const;
+	
+	
+	// Pushes the given value to the front and drops the last value. A helper function for getPenaltyScore().
+	private: static void finderPenaltyAddHistory(int currentRunLength, std::array<int,7> &runHistory);
 	
 	
 	// Returns true iff the i'th bit of x is set to 1.
@@ -307,51 +323,6 @@ class QrCode final {
 	
 	private: static const std::int8_t ECC_CODEWORDS_PER_BLOCK[4][41];
 	private: static const std::int8_t NUM_ERROR_CORRECTION_BLOCKS[4][41];
-	
-	
-	
-	/*---- Private helper class ----*/
-	
-	/* 
-	 * Computes the Reed-Solomon error correction codewords for a sequence of data codewords
-	 * at a given degree. Objects are immutable, and the state only depends on the degree.
-	 * This class exists because each data block in a QR Code shares the same the divisor polynomial.
-	 */
-	private: class ReedSolomonGenerator final {
-		
-		/*-- Immutable field --*/
-		
-		// Coefficients of the divisor polynomial, stored from highest to lowest power, excluding the leading term which
-		// is always 1. For example the polynomial x^3 + 255x^2 + 8x + 93 is stored as the uint8 array {255, 8, 93}.
-		private: std::vector<std::uint8_t> coefficients;
-		
-		
-		/*-- Constructor --*/
-		
-		/* 
-		 * Creates a Reed-Solomon ECC generator for the given degree. This could be implemented
-		 * as a lookup table over all possible parameter values, instead of as an algorithm.
-		 */
-		public: explicit ReedSolomonGenerator(int degree);
-		
-		
-		/*-- Method --*/
-		
-		/* 
-		 * Computes and returns the Reed-Solomon error correction codewords for the given
-		 * sequence of data codewords. The returned object is always a new byte array.
-		 * This method does not alter this object's state (because it is immutable).
-		 */
-		public: std::vector<std::uint8_t> getRemainder(const std::vector<std::uint8_t> &data) const;
-		
-		
-		/*-- Static function --*/
-		
-		// Returns the product of the two given field elements modulo GF(2^8/0x11D).
-		// All inputs are valid. This could be implemented as a 256*256 lookup table.
-		private: static std::uint8_t multiply(std::uint8_t x, std::uint8_t y);
-		
-	};
 	
 };
 

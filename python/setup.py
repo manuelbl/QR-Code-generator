@@ -27,7 +27,7 @@ import setuptools
 setuptools.setup(
 	name = "qrcodegen",
 	description = "High quality QR Code generator library for Python 2 and 3",
-	version = "1.4.0",
+	version = "1.5.0",
 	platforms = "OS Independent",
 	license = "MIT License",
 	
@@ -66,7 +66,7 @@ Features
 
 Core features:
 
-* Available in 7 programming languages, all with nearly equal functionality: Java, JavaScript, TypeScript, Python, C++, C, Rust
+* Available in 6 programming languages, all with nearly equal functionality: Java, TypeScript/JavaScript, Python, Rust, C++, C
 * Significantly shorter code but more documentation comments compared to competing libraries
 * Supports encoding all 40 versions (sizes) and all 4 error correction levels, as per the QR Code Model 2 standard
 * Output formats: Raw modules/pixels of the QR symbol, SVG XML string
@@ -87,6 +87,8 @@ Usage
 Install this package by downloading the source code ZIP file from PyPI_, or by running ``pip install qrcodegen``.
 
 Examples:
+
+::
 
     from qrcodegen import *
     

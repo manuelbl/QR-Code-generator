@@ -396,12 +396,12 @@ class QrCode(object):
 		
 		# Split data into blocks and append ECC to each block
 		blocks = []
-		rs = _ReedSolomonGenerator(blockecclen)
+		rsdiv = QrCode._reed_solomon_compute_divisor(blockecclen)
 		k = 0
 		for i in range(numblocks):
 			dat = data[k : k + shortblocklen - blockecclen + (0 if i < numshortblocks else 1)]
 			k += len(dat)
-			ecc = rs.get_remainder(dat)
+			ecc = QrCode._reed_solomon_compute_remainder(dat, rsdiv)
 			if i < numshortblocks:
 				dat.append(0)
 			blocks.append(dat + ecc)
@@ -464,50 +464,46 @@ class QrCode(object):
 		
 		# Adjacent modules in row having same color, and finder-like patterns
 		for y in range(size):
-			runhistory = collections.deque([0] * 7, 7)
-			color = False
+			runcolor = False
 			runx = 0
+			runhistory = collections.deque([0] * 7, 7)
+			padrun = size  # Add white border to initial run
 			for x in range(size):
-				if modules[y][x] == color:
+				if modules[y][x] == runcolor:
 					runx += 1
 					if runx == 5:
 						result += QrCode._PENALTY_N1
 					elif runx > 5:
 						result += 1
 				else:
-					runhistory.appendleft(runx)
-					if not color and QrCode.has_finder_like_pattern(runhistory):
-						result += QrCode._PENALTY_N3
-					color = modules[y][x]
+					runhistory.appendleft(runx + padrun)
+					padrun = 0
+					if not runcolor:
+						result += self._finder_penalty_count_patterns(runhistory) * QrCode._PENALTY_N3
+					runcolor = modules[y][x]
 					runx = 1
-			runhistory.appendleft(runx)
-			if color:
-				runhistory.appendleft(0)  # Dummy run of white
-			if QrCode.has_finder_like_pattern(runhistory):
-				result += QrCode._PENALTY_N3
+			result += self._finder_penalty_terminate_and_count(runcolor, runx + padrun, runhistory) * QrCode._PENALTY_N3
 		# Adjacent modules in column having same color, and finder-like patterns
 		for x in range(size):
-			runhistory = collections.deque([0] * 7, 7)
-			color = False
+			runcolor = False
 			runy = 0
+			runhistory = collections.deque([0] * 7, 7)
+			padrun = size  # Add white border to initial run
 			for y in range(size):
-				if modules[y][x] == color:
+				if modules[y][x] == runcolor:
 					runy += 1
 					if runy == 5:
 						result += QrCode._PENALTY_N1
 					elif runy > 5:
 						result += 1
 				else:
-					runhistory.appendleft(runy)
-					if not color and QrCode.has_finder_like_pattern(runhistory):
-						result += QrCode._PENALTY_N3
-					color = modules[y][x]
+					runhistory.appendleft(runy + padrun)
+					padrun = 0
+					if not runcolor:
+						result += self._finder_penalty_count_patterns(runhistory) * QrCode._PENALTY_N3
+					runcolor = modules[y][x]
 					runy = 1
-			runhistory.appendleft(runy)
-			if color:
-				runhistory.appendleft(0)  # Dummy run of white
-			if QrCode.has_finder_like_pattern(runhistory):
-				result += QrCode._PENALTY_N3
+			result += self._finder_penalty_terminate_and_count(runcolor, runy + padrun, runhistory) * QrCode._PENALTY_N3
 		
 		# 2*2 blocks of modules having same color
 		for y in range(size - 1):
@@ -554,6 +550,7 @@ class QrCode(object):
 			result -= (25 * numalign - 10) * numalign - 55
 			if ver >= 7:
 				result -= 36
+		assert 208 <= result <= 29648
 		return result
 	
 	
@@ -568,10 +565,74 @@ class QrCode(object):
 	
 	
 	@staticmethod
-	def has_finder_like_pattern(runhistory):
+	def _reed_solomon_compute_divisor(degree):
+		"""Returns a Reed-Solomon ECC generator polynomial for the given degree. This could be
+		implemented as a lookup table over all possible parameter values, instead of as an algorithm."""
+		if not (1 <= degree <= 255):
+			raise ValueError("Degree out of range")
+		# Polynomial coefficients are stored from highest to lowest power, excluding the leading term which is always 1.
+		# For example the polynomial x^3 + 255x^2 + 8x + 93 is stored as the uint8 array [255, 8, 93].
+		result = [0] * (degree - 1) + [1]  # Start off with the monomial x^0
+		
+		# Compute the product polynomial (x - r^0) * (x - r^1) * (x - r^2) * ... * (x - r^{degree-1}),
+		# and drop the highest monomial term which is always 1x^degree.
+		# Note that r = 0x02, which is a generator element of this field GF(2^8/0x11D).
+		root = 1
+		for _ in range(degree):  # Unused variable i
+			# Multiply the current product by (x - r^i)
+			for j in range(degree):
+				result[j] = QrCode._reed_solomon_multiply(result[j], root)
+				if j + 1 < degree:
+					result[j] ^= result[j + 1]
+			root = QrCode._reed_solomon_multiply(root, 0x02)
+		return result
+	
+	
+	@staticmethod
+	def _reed_solomon_compute_remainder(data, divisor):
+		"""Returns the Reed-Solomon error correction codeword for the given data and divisor polynomials."""
+		result = [0] * len(divisor)
+		for b in data:  # Polynomial division
+			factor = b ^ result.pop(0)
+			result.append(0)
+			for (i, coef) in enumerate(divisor):
+				result[i] ^= QrCode._reed_solomon_multiply(coef, factor)
+		return result
+	
+	
+	@staticmethod
+	def _reed_solomon_multiply(x, y):
+		"""Returns the product of the two given field elements modulo GF(2^8/0x11D). The arguments and result
+		are unsigned 8-bit integers. This could be implemented as a lookup table of 256*256 entries of uint8."""
+		if x >> 8 != 0 or y >> 8 != 0:
+			raise ValueError("Byte out of range")
+		# Russian peasant multiplication
+		z = 0
+		for i in reversed(range(8)):
+			z = (z << 1) ^ ((z >> 7) * 0x11D)
+			z ^= ((y >> i) & 1) * x
+		assert z >> 8 == 0
+		return z
+	
+	
+	def _finder_penalty_count_patterns(self, runhistory):
+		"""Can only be called immediately after a white run is added, and
+		returns either 0, 1, or 2. A helper function for _get_penalty_score()."""
 		n = runhistory[1]
-		return n > 0 and n == runhistory[2] == runhistory[4] == runhistory[5] \
-			and runhistory[3] == n * 3 and max(runhistory[0], runhistory[6]) >= n * 4
+		assert n <= self._size * 3
+		core = n > 0 and (runhistory[2] == runhistory[4] == runhistory[5] == n) and runhistory[3] == n * 3
+		return (1 if (core and runhistory[0] >= n * 4 and runhistory[6] >= n) else 0) \
+		     + (1 if (core and runhistory[6] >= n * 4 and runhistory[0] >= n) else 0)
+	
+	
+	def _finder_penalty_terminate_and_count(self, currentruncolor, currentrunlength, runhistory):
+		"""Must be called at the end of a line (row or column) of modules. A helper function for _get_penalty_score()."""
+		if currentruncolor:  # Terminate black run
+			runhistory.appendleft(currentrunlength)
+			currentrunlength = 0
+		currentrunlength += self._size  # Add white border to final run
+		runhistory.appendleft(currentrunlength)
+		return self._finder_penalty_count_patterns(runhistory)
 	
 	
 	# ---- Constants and tables ----
@@ -832,64 +893,7 @@ class QrSegment(object):
 
 
 
-# ---- Private helper classes ----
-
-class _ReedSolomonGenerator(object):
-	"""Computes the Reed-Solomon error correction codewords for a sequence of data codewords
-	at a given degree. Objects are immutable, and the state only depends on the degree.
-	This class exists because each data block in a QR Code shares the same the divisor polynomial."""
-	
-	def __init__(self, degree):
-		"""Creates a Reed-Solomon ECC generator for the given degree. This could be implemented
-		as a lookup table over all possible parameter values, instead of as an algorithm."""
-		if degree < 1 or degree > 255:
-			raise ValueError("Degree out of range")
-		
-		# Start with the monomial x^0
-		self.coefficients = [0] * (degree - 1) + [1]
-		
-		# Compute the product polynomial (x - r^0) * (x - r^1) * (x - r^2) * ... * (x - r^{degree-1}),
-		# drop the highest term, and store the rest of the coefficients in order of descending powers.
-		# Note that r = 0x02, which is a generator element of this field GF(2^8/0x11D).
-		root = 1
-		for _ in range(degree):  # Unused variable i
-			# Multiply the current product by (x - r^i)
-			for j in range(degree):
-				self.coefficients[j] = _ReedSolomonGenerator._multiply(self.coefficients[j], root)
-				if j + 1 < degree:
-					self.coefficients[j] ^= self.coefficients[j + 1]
-			root = _ReedSolomonGenerator._multiply(root, 0x02)
-	
-	
-	def get_remainder(self, data):
-		"""Computes and returns the Reed-Solomon error correction codewords for the given
-		sequence of data codewords. The returned object is always a new byte list.
-		This method does not alter this object's state (because it is immutable)."""
-		# Compute the remainder by performing polynomial division
-		result = [0] * len(self.coefficients)
-		for b in data:
-			factor = b ^ result.pop(0)
-			result.append(0)
-			for (i, coef) in enumerate(self.coefficients):
-				result[i] ^= _ReedSolomonGenerator._multiply(coef, factor)
-		return result
-	
-	
-	@staticmethod
-	def _multiply(x, y):
-		"""Returns the product of the two given field elements modulo GF(2^8/0x11D). The arguments and result
-		are unsigned 8-bit integers. This could be implemented as a lookup table of 256*256 entries of uint8."""
-		if x >> 8 != 0 or y >> 8 != 0:
-			raise ValueError("Byte out of range")
-		# Russian peasant multiplication
-		z = 0
-		for i in reversed(range(8)):
-			z = (z << 1) ^ ((z >> 7) * 0x11D)
-			z ^= ((y >> i) & 1) * x
-		assert z >> 8 == 0
-		return z
-
-
+# ---- Private helper class ----
 
 class _BitBuffer(list):
 	"""An appendable sequence of bits (0s and 1s). Mainly used by QrSegment."""
